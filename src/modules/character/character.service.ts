@@ -60,6 +60,7 @@ export class CharacterService implements OnModuleInit {
     }
 
     await pool.end();
+    console.log('Data created successfully');
     return {
       message: 'Data successfully created',
     };
