@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from 'src/core/prisma/prisma.service';
 
 @Injectable()
-export class CharacterService {
+export class CharacterService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
+  async onModuleInit() {
+    await this.fetchAndStoreCharacters();
+  }
 
   async fetchAndStoreCharacters() {
     let fetchUrl: string = 'https://rickandmortyapi.com/api/character/';
