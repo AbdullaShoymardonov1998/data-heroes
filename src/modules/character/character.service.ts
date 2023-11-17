@@ -1,15 +1,11 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
 @Injectable()
 export class CharacterService implements OnModuleInit {
   async onModuleInit() {
-    await this.fetchAndStoreCharacters();
-  }
-
-  async fetchAndStoreCharacters() {
-    let fetchUrl = 'https://rickandmortyapi.com/api/character/';
+    let fetchUrl = 'https://rickandmortyapi.com/api/character?page=1';
     const pool = new Pool({
       user: 'user',
       host: '38.242.252.210',
@@ -41,28 +37,28 @@ export class CharacterService implements OnModuleInit {
         );
     `;
     await pool.query(createTableQuery);
+    while (fetchUrl) {
+      try {
+        const page = fetchUrl.split('=')[1];
+        console.log('Fetching page:', page);
 
-    try {
-      const response = await axios.get(fetchUrl);
-      const characters = response.data.results;
+        const response = await axios.get(fetchUrl);
+        const characters = response.data.results;
 
-      for (const character of characters) {
-        const text =
-          'INSERT INTO "characters" (name, data) VALUES ($1, $2) ON CONFLICT(name) DO NOTHING';
-        const values = [character.name, character];
+        for (const character of characters) {
+          const text =
+            'INSERT INTO "characters" (name, data) VALUES ($1, $2) ON CONFLICT(name) DO NOTHING';
+          const values = [character.name, character];
 
-        await pool.query(text, values);
+          await pool.query(text, values);
+        }
+
+        fetchUrl = response.data.info.next;
+      } catch (error) {
+        console.error('Error fetching or storing characters:', error);
       }
-
-      fetchUrl = response.data.info.next;
-    } catch (error) {
-      console.error('Error fetching or storing characters:', error);
     }
-
+    console.log(`Finished successfully`);
     await pool.end();
-    console.log('Data created successfully');
-    return {
-      message: 'Data successfully created',
-    };
   }
 }
