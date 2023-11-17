@@ -4,6 +4,4 @@
 
 Framework: NestJS
 
-ORM: Prisma
-
 Database: PostgreSQL

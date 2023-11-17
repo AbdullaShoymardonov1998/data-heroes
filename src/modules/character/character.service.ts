@@ -1,46 +1,67 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
-import { PrismaService } from 'src/core/prisma/prisma.service';
+const { Pool } = require('pg');
 
 @Injectable()
 export class CharacterService implements OnModuleInit {
-  constructor(private prisma: PrismaService) {}
   async onModuleInit() {
     await this.fetchAndStoreCharacters();
   }
 
   async fetchAndStoreCharacters() {
-    let fetchUrl: string = 'https://rickandmortyapi.com/api/character/';
+    let fetchUrl = 'https://rickandmortyapi.com/api/character/';
+    const pool = new Pool({
+      user: 'user',
+      host: '38.242.252.210',
+      database: 'database',
+      password: 'password',
+      port: 5432,
+    });
 
-    while (fetchUrl) {
-      try {
-        const { data } = await axios({
-          method: 'GET',
-          url: fetchUrl,
-          validateStatus: (status) => status >= 200 && status < 300,
-        });
+    const checkSchemaQuery = `
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (SELECT schema_name
+                           FROM information_schema.schemata 
+                           WHERE schema_name = 'public') THEN
+                CREATE SCHEMA public;
+            END IF;
+        END
+        $$;
+    `;
 
-        const characters = data.results;
+    await pool.query(checkSchemaQuery);
 
-        const characterData = characters.map((character) => ({
-          name: character.name,
-          data: character,
-        }));
+    const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS public."characters" (
+            "id" SERIAL NOT NULL,
+            "name" TEXT NOT NULL UNIQUE,
+            "data" JSONB NOT NULL,
+            CONSTRAINT "Character_pkey" PRIMARY KEY ("id")
+        );
+    `;
+    await pool.query(createTableQuery);
 
-        await this.prisma.character.createMany({
-          data: characterData,
-          skipDuplicates: true,
-        });
+    try {
+      const response = await axios.get(fetchUrl);
+      const characters = response.data.results;
 
-        fetchUrl = data.info.next;
+      for (const character of characters) {
+        const text =
+          'INSERT INTO "characters" (name, data) VALUES ($1, $2) ON CONFLICT(name) DO NOTHING';
+        const values = [character.name, character];
 
-        return {
-          message: 'Data successfully created',
-        };
-      } catch (error) {
-        console.error('Error fetching or storing characters:', error);
-        break;
+        await pool.query(text, values);
       }
+
+      fetchUrl = response.data.info.next;
+    } catch (error) {
+      console.error('Error fetching or storing characters:', error);
     }
+
+    await pool.end();
+    return {
+      message: 'Data successfully created',
+    };
   }
 }
