@@ -1,12 +1,6 @@
-import {
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Query,
-} from '@nestjs/common';
-import { CharacterService } from './character.service';
+import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CharacterService } from './character.service';
 
 @ApiTags('Characters')
 @Controller({ path: 'characters', version: '1' })

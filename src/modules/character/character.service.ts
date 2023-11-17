@@ -21,12 +21,7 @@ export class CharacterService {
 
         const characterData = characters.map((character) => ({
           name: character.name,
-          status: character.status,
-          species: character.species,
-          type: character.type,
-          gender: character.gender,
-          origin: character.origin,
-          location: character.location,
+          data: character,
         }));
 
         await this.prisma.character.createMany({
