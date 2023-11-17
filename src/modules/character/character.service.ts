@@ -1,17 +1,24 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
 import { Pool } from 'pg';
-
+import * as fs from 'fs';
+import * as path from 'path';
 @Injectable()
 export class CharacterService implements OnModuleInit {
   async onModuleInit() {
     let fetchUrl = 'https://rickandmortyapi.com/api/character?page=1';
     const pool = new Pool({
-      user: 'user',
-      host: '38.242.252.210',
-      database: 'database',
-      password: 'password',
-      port: 5432,
+      //   user: 'candidate',
+      //   host: 'rc1b-r21uoagjy1t7k77h.mdb.yandexcloud.net',
+      //   database: 'db1',
+      //   password: '62I8anq3cFq5GYh2u4Lh',
+      //   port: 6432,
+      connectionString:
+        'postgres://candidate:62I8anq3cFq5GYh2u4Lh@rc1b-r21uoagjy1t7k77h.mdb.yandexcloud.net:6432/db1',
+      ssl: {
+        rejectUnauthorized: true,
+        ca: fs.readFileSync('root.crt'),
+      },
     });
 
     const checkSchemaQuery = `
@@ -29,7 +36,7 @@ export class CharacterService implements OnModuleInit {
     await pool.query(checkSchemaQuery);
 
     const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS public."characters" (
+        CREATE TABLE IF NOT EXISTS public."abdulla" (
             "id" SERIAL NOT NULL,
             "name" TEXT NOT NULL UNIQUE,
             "data" JSONB NOT NULL,
@@ -47,7 +54,7 @@ export class CharacterService implements OnModuleInit {
 
         for (const character of characters) {
           const text =
-            'INSERT INTO "characters" (name, data) VALUES ($1, $2) ON CONFLICT(name) DO NOTHING';
+            'INSERT INTO "abdulla" (name, data) VALUES ($1, $2) ON CONFLICT(name) DO NOTHING';
           const values = [character.name, character];
 
           await pool.query(text, values);
